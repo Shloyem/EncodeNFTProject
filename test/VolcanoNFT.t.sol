@@ -14,7 +14,9 @@ contract VolcanoNFTTest is Test {
     VolcanoCoin private volcanoCoin;
     ERC721Receiver private erc721Receiver1;
     ERC721Receiver private erc721Receiver2;
-    uint nftId = 1;
+    uint constant NFT_ID = 1;
+    uint constant ETH_PRICE = 0.01 ether;
+    uint constant TOKENS_PRICE = 100;
 
     function setUp() public {
         volcanoCoin = new VolcanoCoin();
@@ -33,7 +35,7 @@ contract VolcanoNFTTest is Test {
 
     function testMint() public {
         volcanoNFT.mint(user1);
-        assertEq(volcanoNFT.ownerOf(nftId), user1);
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
     }
 
     function testNotOwnerCantMint() public {
@@ -44,32 +46,94 @@ contract VolcanoNFTTest is Test {
 
     function testHolderTransfer() public {
         volcanoNFT.mint(user1);
-        assertEq(volcanoNFT.ownerOf(nftId), user1);
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
         vm.prank(user1); // changed to user1 from owner
-        volcanoNFT.transferFrom(user1, user2, nftId);
-        assertEq(volcanoNFT.ownerOf(nftId), user2);
+        volcanoNFT.transferFrom(user1, user2, NFT_ID);
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user2);
     }
 
     function testNotHolderCantTransfer() public {
         volcanoNFT.mint(user1);
-        assertEq(volcanoNFT.ownerOf(nftId), user1);
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
         vm.expectRevert("ERC721: caller is not token owner or approved");
         // attemp transfer from contract-owner but not NFT-owner or approved
-        volcanoNFT.transferFrom(user1, user2, nftId);
+        volcanoNFT.transferFrom(user1, user2, NFT_ID);
 
         vm.expectRevert("ERC721: caller is not token owner or approved");
         // attemp transfer from another user that is not the holder
         vm.prank(user2);
-        volcanoNFT.transferFrom(user1, user2, nftId);
+        volcanoNFT.transferFrom(user1, user2, NFT_ID);
     }
 
     function testApproveTransfer() public {
         volcanoNFT.mint(user1);
-        assertEq(volcanoNFT.ownerOf(nftId), user1);
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
         vm.prank(user1);
-        volcanoNFT.approve(contractOwner, nftId);
+        volcanoNFT.approve(contractOwner, NFT_ID);
         vm.prank(contractOwner);
-        volcanoNFT.transferFrom(user1, user2, nftId);
-        assertEq(volcanoNFT.ownerOf(nftId), user2);
+        volcanoNFT.transferFrom(user1, user2, NFT_ID);
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user2);
+    }
+
+    function testPayToMintFailures() public {
+        // not sending ether or token
+        vm.expectRevert("VolcanoNFT: couldnt charge eth or token");
+        vm.prank(user1);
+        volcanoNFT.payToMint(user1);
+
+        // sending too little eth
+        vm.deal(address(user1), ETH_PRICE);
+        vm.expectRevert("VolcanoNFT: couldnt charge eth or token");
+        vm.prank(user1);
+        uint notEnoughEth = ETH_PRICE - 0.0001 ether;
+        volcanoNFT.payToMint{value: notEnoughEth}(user1);
+
+        // sending too little Token
+        uint notEnoughTokens = TOKENS_PRICE - 1;
+        vm.prank(contractOwner);
+        volcanoCoin.transfer(notEnoughTokens, user1);
+        vm.startPrank(user1);
+        volcanoCoin.approve(address(volcanoNFT), notEnoughTokens);
+        vm.expectRevert("VolcanoNFT: couldnt charge eth or token");
+        volcanoNFT.payToMint(user1);
+    }
+
+    function testEtherPayToMintPasses() public {
+        vm.deal(address(user1), ETH_PRICE);
+
+        vm.expectRevert("ERC721: invalid token ID");
+        assertTrue(volcanoNFT.ownerOf(NFT_ID) != user1);
+
+        vm.prank(user1);
+        volcanoNFT.payToMint{value: ETH_PRICE}(user1);
+
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
+    }
+
+    function testEtherPayToMintReturnsExtraEth() public {
+        vm.deal(address(user1), 1 ether);
+
+        vm.expectRevert("ERC721: invalid token ID");
+        assertTrue(volcanoNFT.ownerOf(NFT_ID) != user1);
+
+        vm.prank(user1);
+        volcanoNFT.payToMint{value: 1 ether}(user1);
+
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
+        assertEq(address(user1).balance, 0.99 ether);
+    }
+
+    function testTokensPayToMintPasses() public {
+        vm.expectRevert("ERC721: invalid token ID");
+        assertTrue(volcanoNFT.ownerOf(NFT_ID) != user1);
+
+        vm.prank(contractOwner);
+        volcanoCoin.transfer(TOKENS_PRICE, user1);
+
+        vm.startPrank(user1);
+        volcanoCoin.approve(address(volcanoNFT), TOKENS_PRICE);
+        volcanoNFT.payToMint(user1);
+
+        assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
     }
 }

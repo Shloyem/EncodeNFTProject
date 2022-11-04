@@ -21,7 +21,7 @@ contract VolcanoCoinTest is Test {
         assertEq(volcanoCoin.totalSupply(), 10000 + 1000);
     }
 
-    function testOnlyOwnerIncreases(uint256 x) public {
+    function testOnlyOwnerIncreases() public {
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(address(0));
         volcanoCoin.increaseTotalSupply();

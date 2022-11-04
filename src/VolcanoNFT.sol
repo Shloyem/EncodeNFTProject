@@ -5,6 +5,7 @@ import "openzeppelin-contracts/token/ERC721/ERC721.sol";
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 import "openzeppelin-contracts/utils/Counters.sol";
+import "forge-std/console.sol";
 
 // import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; // if using remix / npm
 // import "@openzeppelin/contracts/access/Ownable.sol";
@@ -33,17 +34,21 @@ contract VolcanoNFT is ERC721, Ownable {
     }
 
     function payToMint(address _to) public payable {
-        bool executed;
-
+        // accept ether
         if (msg.value >= 0.01 ether) {
-            payable(msg.sender).transfer(msg.value - 0.01 ether); // maybe improve
-            executed = true;
-        } else {
-            IERC20(coinAddress).transferFrom(msg.sender, address(this), 100);
-            executed = true;
+            if (msg.value > 0.01 ether) {
+                // try to return additional eth
+                payable(msg.sender).call{value: msg.value - 0.01 ether}("");
+            }
         }
-
-        require(executed, "Did not receive 0.01 ether or 100 tokens");
+        // accept other token
+        else {
+            try
+                IERC20(coinAddress).transferFrom(msg.sender, address(this), 100)
+            {} catch {
+                revert("VolcanoNFT: couldnt charge eth or token");
+            }
+        }
 
         _mint(_to);
     }
