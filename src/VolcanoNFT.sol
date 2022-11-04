@@ -52,4 +52,10 @@ contract VolcanoNFT is ERC721, Ownable {
 
         _mint(_to);
     }
+
+    function _baseURI() internal view override returns (string memory) {
+        return "https://amazingURI.io/";
+        // we could have inherited from ERC721URIStorage to have _setTokenURI
+        // and be able to set per-token metadata.
+    }
 }

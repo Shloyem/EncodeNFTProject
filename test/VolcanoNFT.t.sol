@@ -136,4 +136,18 @@ contract VolcanoNFTTest is Test {
 
         assertEq(volcanoNFT.ownerOf(NFT_ID), user1);
     }
+
+    function testURI() public {
+        volcanoNFT.mint(user1);
+
+        string memory baseUri = "https://amazingURI.io/";
+        string memory tokenUri = volcanoNFT.tokenURI(NFT_ID);
+        assertEq(
+            tokenUri,
+            string.concat(
+                baseUri,
+                "1" /*NFT_ID*/
+            )
+        );
+    }
 }
