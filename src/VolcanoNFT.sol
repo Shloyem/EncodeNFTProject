@@ -5,13 +5,10 @@ import "openzeppelin-contracts/token/ERC721/ERC721.sol";
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 import "openzeppelin-contracts/utils/Counters.sol";
+import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "forge-std/console.sol";
 
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; // if using remix / npm
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/utils/Counters.sol";
-
-contract VolcanoNFT is ERC721, Ownable {
+contract VolcanoNFT is ERC721, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
     address public coinAddress;
     Counters.Counter private tokenIdCounter;
@@ -33,7 +30,7 @@ contract VolcanoNFT is ERC721, Ownable {
         _safeMint(_to, tokenIdCounter.current());
     }
 
-    function payToMint(address _to) public payable {
+    function payToMint(address _to) public payable nonReentrant {
         // accept ether
         if (msg.value >= 0.01 ether) {
             if (msg.value > 0.01 ether) {
