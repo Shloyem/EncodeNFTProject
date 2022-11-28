@@ -7,20 +7,13 @@ import "openzeppelin-contracts/token/ERC20/ERC20.sol";
 address administrator;
 
 contract ShameCoin is ERC20, Ownable {
-    uint constant _initialSupply = 10000;
+    uint constant INITIAL_SUPPLY = 10000;
+    address constant BURN_ADDRESS = address(0x000000000000000000000000000000000000dEaD);
     address _administrator;
-
-    // /**
-    //  * @dev Throws if called by any account other than the administrator.
-    //  */
-    // modifier onlyAdministrator() {
-    //     require(_administrator == msg.sender, "Caller is not the administrator");
-    //     _;
-    // }
 
     constructor() ERC20("ShameCoin", "SHC") {
       _administrator = msg.sender;
-      _mint(msg.sender, _initialSupply);
+      _mint(msg.sender, INITIAL_SUPPLY);
     }
 
     function decimals() public view virtual override returns (uint8) {
@@ -55,5 +48,31 @@ contract ShameCoin is ERC20, Ownable {
         require(spender == _administrator, "Spender is not the administrator");
         _approve(msg.sender, _administrator, 1);
         return true;
+    }
+
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * NOTE: Does not update the allowance if the current allowance
+     * is the maximum `uint256`.
+     *
+     * Requirements:
+     *
+     * - `from` and `to` cannot be the zero address.
+     * - `from` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``from``'s tokens of at least
+     * `amount`.
+     */
+    // The transfer from function should just reduce the balance of the holder.
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        constant 
+        return transfer(from, BURN_ADDRESS,amount);
     }
 }
