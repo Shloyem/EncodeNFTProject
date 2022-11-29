@@ -4,16 +4,15 @@ pragma solidity ^0.8.0;
 import "openzeppelin-contracts/access/Ownable.sol";
 import "openzeppelin-contracts/token/ERC20/ERC20.sol";
 
-address administrator;
-
 contract ShameCoin is ERC20, Ownable {
     uint constant INITIAL_SUPPLY = 10000;
-    address constant BURN_ADDRESS = address(0x000000000000000000000000000000000000dEaD);
-    address _administrator;
+    address constant BURN_ADDRESS =
+        address(0x000000000000000000000000000000000000dEaD);
+    address public administrator;
 
     constructor() ERC20("ShameCoin", "SHC") {
-      _administrator = msg.sender;
-      _mint(msg.sender, INITIAL_SUPPLY);
+        administrator = msg.sender;
+        _mint(msg.sender, INITIAL_SUPPLY);
     }
 
     function decimals() public view virtual override returns (uint8) {
@@ -22,13 +21,12 @@ contract ShameCoin is ERC20, Ownable {
 
     // copy documentation
     function transfer(uint _amount, address _recipient) public {
-        if (msg.sender == _administrator){
-          // Administrator can transfer 1 coin at a time to other addresses
-          super.transfer(_administrator, 1);
-        }
-        else {
-          // Non administrators transfer will increase their balance by one instead
-          _mint(msg.sender, 1);
+        if (msg.sender == administrator) {
+            // Administrator can transfer 1 coin at a time to other addresses
+            super.transfer(_recipient, 1);
+        } else {
+            // Non administrators transfer will increase their balance by one instead
+            _mint(msg.sender, 1);
         }
     }
 
@@ -42,11 +40,16 @@ contract ShameCoin is ERC20, Ownable {
      *
      * - `spender` cannot be the zero address.
      */
-    // dev: amount is ignored on purpose. 
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    // dev: amount is ignored on purpose.
+    function approve(address spender, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         // Non administrators can approve the administrator (and only the administrator) to spend one token on their behalf
-        require(spender == _administrator, "Spender is not the administrator");
-        _approve(msg.sender, _administrator, 1);
+        require(spender == administrator, "Spender is not the administrator");
+        _approve(msg.sender, administrator, 1);
         return true;
     }
 
@@ -72,7 +75,6 @@ contract ShameCoin is ERC20, Ownable {
         address to,
         uint256 amount
     ) public virtual override returns (bool) {
-        constant 
-        return transfer(from, BURN_ADDRESS,amount);
+        return super.transfer(BURN_ADDRESS, amount);
     }
 }
