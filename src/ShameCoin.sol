@@ -20,13 +20,19 @@ contract ShameCoin is ERC20, Ownable {
     }
 
     // copy documentation
-    function transfer(uint _amount, address _recipient) public {
+    function transfer(address to, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         if (msg.sender == administrator) {
             // Administrator can transfer 1 coin at a time to other addresses
-            super.transfer(_recipient, 1);
+            return super.transfer(to, 1);
         } else {
             // Non administrators transfer will increase their balance by one instead
             _mint(msg.sender, 1);
+            return true;
         }
     }
 
