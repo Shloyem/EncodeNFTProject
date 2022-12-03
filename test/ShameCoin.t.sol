@@ -30,13 +30,20 @@ contract ShameCoinTest is Test {
         assertEq(shameCoin.administrator(), administratorAddress);
     }
 
-    function testTransferByAdministrator() public {
+    function testTransferOneByAdministrator() public {
         assertEq(shameCoin.balanceOf(administratorAddress), 10000);
         uint recipientBalanceBefore = shameCoin.balanceOf(recipient);
 
-        shameCoin.transfer(recipient, 2);
+        shameCoin.transfer(recipient, 1);
 
+        // The administrator can send 1 shame coin at a time to other addresses
+        // even though he passed amount as 2, only 1 is allowed
         assertEq(shameCoin.balanceOf(administratorAddress), 10000 - 1);
-        assertEq(shameCoin.balanceOf(recipient), balanceBefore + 1);
+        assertEq(shameCoin.balanceOf(recipient), recipientBalanceBefore + 1);
+    }
+
+    function testTransferMoreThanOneByAdministrator() public {
+        vm.expectRevert("Administrator can send 1 coin at a time");
+        shameCoin.transfer(recipient, 2);
     }
 }
