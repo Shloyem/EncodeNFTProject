@@ -7,13 +7,21 @@ import "../src/ShameCoin.sol";
 contract ShameCoinTest is Test {
     ShameCoin private shameCoin;
     address private administrator;
-    address private recipient;
+    address private recipient1;
+    address private recipient2;
 
     function setUp() public {
-        recipient = address(0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6);
+        recipient1 = address(0x1Db3439a222C519ab44bb1144fC28167b4Fa6EE6);
+        recipient2 = address(0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045);
         administrator = address(0xb4c79daB8f259C7Aee6E5b2Aa729821864227e84);
         vm.prank(administrator);
         shameCoin = new ShameCoin();
+    }
+
+    function fundRecipientWithCoin() public {
+        // send 1 coin to recipient so he has funds to send
+        shameCoin.transfer(recipient1, 1);
+        assertEq(shameCoin.balanceOf(recipient1), 1);
     }
 
     function testInitialTotalSupply() public {
@@ -30,33 +38,41 @@ contract ShameCoinTest is Test {
 
     function testTransferOneByAdministrator() public {
         assertEq(shameCoin.balanceOf(administrator), 10000);
-        uint recipientBalanceBefore = shameCoin.balanceOf(recipient);
+        uint recipientBalanceBefore = shameCoin.balanceOf(recipient1);
 
-        shameCoin.transfer(recipient, 1);
+        shameCoin.transfer(recipient1, 1);
 
         // The administrator can send 1 shame coin at a time to other addresses
         // even though he passed amount as 2, only 1 is allowed
         assertEq(shameCoin.balanceOf(administrator), 10000 - 1);
-        assertEq(shameCoin.balanceOf(recipient), recipientBalanceBefore + 1);
+        assertEq(shameCoin.balanceOf(recipient1), recipientBalanceBefore + 1);
     }
 
     function testTransferMoreThanOneByAdministrator() public {
         vm.expectRevert("Administrator can send 1 coin at a time");
-        shameCoin.transfer(recipient, 2);
+        shameCoin.transfer(recipient1, 2);
     }
 
     // On non administrators transfer - increase their balance by one
     function testTransferByNonAdministrator() public {
-        // send 1 coin to recipient so he has funds to send
-        shameCoin.transfer(recipient, 1);
-        assertEq(shameCoin.balanceOf(recipient), 1);
-
+        fundRecipientWithCoin();
         uint adminBalanceBefore = shameCoin.balanceOf(administrator);
 
-        vm.prank(recipient);
+        vm.prank(recipient1);
         shameCoin.transfer(administrator, 1);
 
         assertEq(shameCoin.balanceOf(administrator), adminBalanceBefore);
-        assertEq(shameCoin.balanceOf(recipient), 2);
+        assertEq(shameCoin.balanceOf(recipient1), 2);
+    }
+
+    function testNonAdministratorsApproveAdministrator() public {
+        fundRecipientWithCoin();
+        assertEq(shameCoin.balanceOf(recipient1), 1);
+        assertEq(shameCoin.balanceOf(recipient2), 0);
+
+        vm.prank(recipient1);
+        shameCoin.approve(administrator, 1);
+
+        assertEq(shameCoin.allowance(recipient1, administrator), 1);
     }
 }
