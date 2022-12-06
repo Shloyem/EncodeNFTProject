@@ -75,4 +75,14 @@ contract ShameCoinTest is Test {
 
         assertEq(shameCoin.allowance(recipient1, administrator), 1);
     }
+
+    function testNonAdministratorsApproveNonAdministrator() public {
+        fundRecipientWithCoin();
+        assertEq(shameCoin.balanceOf(recipient1), 1);
+        assertEq(shameCoin.balanceOf(recipient2), 0);
+
+        vm.prank(recipient1);
+        vm.expectRevert("Spender is not the administrator");
+        shameCoin.approve(recipient2, 1);
+    }
 }
