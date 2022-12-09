@@ -20,8 +20,9 @@ contract ShameCoinTest is Test {
 
     function fundRecipientWithCoin() public {
         // send 1 coin to recipient so he has funds to send
+        uint balanceBefore = shameCoin.balanceOf(recipient1);
         shameCoin.transfer(recipient1, 1);
-        assertEq(shameCoin.balanceOf(recipient1), 1);
+        assertEq(shameCoin.balanceOf(recipient1), balanceBefore + 1);
     }
 
     function testInitialTotalSupply() public {
@@ -84,5 +85,20 @@ contract ShameCoinTest is Test {
         vm.prank(recipient1);
         vm.expectRevert("Spender is not the administrator");
         shameCoin.approve(recipient2, 1);
+    }
+
+    // The transfer from function should just reduce the balance of the holder
+    function testTransferFromReducesSenderBalance() public {
+        fundRecipientWithCoin();
+        fundRecipientWithCoin();
+
+        assertEq(shameCoin.balanceOf(recipient1), 2);
+        assertEq(shameCoin.balanceOf(recipient2), 0);
+
+        vm.prank(recipient1);
+        shameCoin.transferFrom(administrator, recipient2, 2);
+
+        assertEq(shameCoin.balanceOf(recipient1), 0);
+        assertEq(shameCoin.balanceOf(recipient2), 0);
     }
 }
